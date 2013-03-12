@@ -167,11 +167,4 @@ class workerThread(threading.Thread):
             self.client.close()
                
 
-        
-    
-inputJQ  = jobqueues.inputJobQueue(10)
-outputJQ = jobqueues.outputJobQueue()
-
-serverlist = serverListener(4000, inputJQ, outputJQ)
-
 
