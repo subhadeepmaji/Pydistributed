@@ -1,10 +1,7 @@
 
-import threading
-import Queue
-import re
-import customErrors
-
+import include
 # A single job to be exceuted on a remote machine
+
 class jobInstance(object):
 
     def __init__(self, jID, pID, NP):
@@ -74,16 +71,22 @@ class outputJobQueue():
 
     def __init__(self):
     
-        self.jobLock = threading.Lock()
+        self.queueLock = threading.Lock()
+        self.jobLock = dict()
         self.finishedjobs = dict()
 
     # Add a finished job to finished jobs dict
+
     def addToQueueFJ(self, jobInstance):
     
-        self.jobLock.acquire()
+        self.queueLock.acquire()
+        
         if (not self.finishedjobs[jobInstance.jobID, jobInstance.NOP]):
+            
             self.finishedjobs[jobInstance.jobID, jobInstance.NOP] = [] 
-         
+            self.jobLock[jobInstance.jobID] = threading.Lock()
+            self.jobLock[jobInstance.jobID].acquire()
+
         partIDlist = map(lambda jobIns : jobIns.partID, self.finishedjobs[jobInstance.jobID, jobInstance.NOP])
 
 
@@ -94,12 +97,29 @@ class outputJobQueue():
             
             for jobIns in self.finishedjobs[jobInstance.jobID, jobInstance.NOP]:
                 partIDdict[jobIns.partID] = jobIns
-            for key in sorted(partIDdict.iterkeys()):
-                print partIDdict[key].resultSet         
-
-            self.finishedjobs[jobInstance.jobID, jobsInstance.NOP] = []
-        
-        self.jobLock.release()         
-
+            self.jobLock[jobInstance.jobID].release()
+                
     
+        self.queueLock.release()         
         
+        
+    
+    def resultsetforjobID(self, jobID, NOP):
+
+        self.jobLock[jobID].acquire()
+        
+        jobinstances = self.finishedjobs[jobID,NOP]
+        resultset = []
+
+        for jobinstance in sorted(jobinstances, key = (lambda x: x.partID)):
+            
+            resultset.append(jobinstance.resultset)
+            
+        self.jobLock[jobID] = []
+        
+        return resultset
+
+     
+
+        
+
